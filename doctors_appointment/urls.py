@@ -6,6 +6,7 @@ from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('social-auth/', include('social_django.urls', namespace='social')),
     path('dashboard/', include(('dashboard.urls', 'dashboard'), namespace='dashboard')),
     path('', include(('home.urls', 'home'), namespace='home')),
     path('bookings/', include(('bookings.urls', 'bookings'), namespace='bookings')),

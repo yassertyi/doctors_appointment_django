@@ -5,21 +5,21 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
-                <h2 class="mb-3 mb-md-0">My Patients</h2>
+                <h2 class="mb-3 mb-md-0">المرضى</h2>
                 <div class="d-flex gap-2">
                     <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse"
                         data-bs-target="#filterSection">
-                        <i class="fas fa-filter me-2"></i>Filters
+                        <i class="fas fa-filter me-2"></i>فلترة
                     </button>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary dropdown-toggle" type="button"
                             data-bs-toggle="dropdown">
-                            <i class="fas fa-sort me-2"></i>Sort by
+                            <i class="fas fa-sort me-2"></i>ترتيب حسب
                         </button>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-sort="full_name">Name</a></li>
-                            <li><a class="dropdown-item" href="#" data-sort="id">Patient ID</a></li>
-                            <li><a class="dropdown-item" href="#" data-sort="age">Age</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="full_name">الاسم</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="id">رقم المريض</a></li>
+                            <li><a class="dropdown-item" href="#" data-sort="age">العمر</a></li>
                         </ul>
                     </div>
                 </div>
@@ -27,12 +27,12 @@
         </div>
     </div>
 
-    <!-- Search and Filters -->
+    <!-- البحث والفلترة -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-body">
-                    <!-- Search Bar -->
+                    <!-- شريط البحث -->
                     <div class="row mb-4">
                         <div class="col-12">
                             <div class="input-group">
@@ -40,26 +40,26 @@
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
                                 <input type="text" id="patientSearch" class="form-control border-start-0"
-                                    placeholder="Search patients by name, ID, or location...">
+                                    placeholder="ابحث عن المرضى بالاسم أو الرقم التعريفي...">
                             </div>
                         </div>
                     </div>
 
-                    <!-- Collapsible Filters -->
+                    <!-- فلاتر قابلة للطي -->
                     <div class="collapse" id="filterSection">
                         <div class="row g-3">
                             <div class="col-md-3">
-                                <label class="form-label">Gender</label>
+                                <label class="form-label">الجنس</label>
                                 <select class="form-select" id="genderFilter">
-                                    <option value="">All</option>
-                                    <option value="0">Male</option>
-                                    <option value="1">Female</option>
+                                    <option value="">الكل</option>
+                                    <option value="0">ذكر</option>
+                                    <option value="1">أنثى</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Age Range</label>
+                                <label class="form-label">الفئة العمرية</label>
                                 <select class="form-select" id="ageFilter">
-                                    <option value="">All</option>
+                                    <option value="">الكل</option>
                                     <option value="0-18">0-18</option>
                                     <option value="19-30">19-30</option>
                                     <option value="31-50">31-50</option>
@@ -67,9 +67,9 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label">Location</label>
+                                <label class="form-label">الموقع</label>
                                 <input type="text" class="form-control" id="locationFilter"
-                                    placeholder="Enter location">
+                                    placeholder="أدخل الموقع">
                             </div>
                         </div>
                     </div>
@@ -78,56 +78,75 @@
         </div>
     </div>
 
-    <!-- Patient Grid -->
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" id="patientGrid">
-        {% for patient in patients %}
-        <div class="col patient-card" data-name="{{ patient.user.get_full_name }}" data-id="{{ patient.id }}"
-            data-gender="{{ patient.gender }}" data-age="{{ patient.age|default:0 }}">
-            <div class="card h-100 shadow-sm hover-shadow">
-                <div class="position-relative">
-                    <img src="{{ patient.user.profile_picture.url|default:'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&h=500&fit=crop' }}"
-                        class="card-img-top patient-img" alt="{{ patient.user.get_full_name }}">
-                    <div class="patient-id-badge">
-                        ID: {{ patient.id }}
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start mb-3">
-                        <div>
-                            <h5 class="card-title mb-1">{{ patient.user.get_full_name }}</h5>
-                            <p class="text-muted small mb-0">
-                                <i class="fas fa-envelope me-1"></i>{{ patient.user.email }}
-                            </p>
-                        </div>
-                        <span class="badge bg-primary">
-                            {% if patient.gender == 'Male' %}
-                            ذكر
-                            {% else %}
-                            أنثى
-                            {% endif %}
-                        </span>
-                    </div>
-                    <div class="patient-details">
-                        <div class="detail-item">
-                            <i class="fas fa-calendar-check text-success"></i>
-                            <span>عدد الحجوزات: {{ patient.booking_count }}</span>
-                        </div>
-                        {% if patient.last_booking %}
-                        <div class="detail-item">
-                            <i class="fas fa-clock text-warning"></i>
-                            <span>آخر حجز: {{ patient.last_booking.booking_date }}</span>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="card-footer bg-white">
-                    <a href="#" class="btn btn-sm btn-outline-primary w-100">
-                        <i class="fas fa-eye me-1"></i>عرض التفاصيل
-                    </a>
-                </div>
+    <!-- جدول المرضى -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped" id="patientTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>رقم المريض</th>
+                            <th>الصورة</th>
+                            <th>الاسم</th>
+                            <th>البريد الإلكتروني</th>
+                            <th>الجنس</th>
+                            <th>عدد الحجوزات</th>
+                            <th>آخر حجز</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for patient in patients %}
+                        <tr class="patient-row" data-name="{{ patient.user.get_full_name }}" data-id="{{ patient.id }}"
+                            data-gender="{{ patient.gender }}" data-age="{{ patient.age|default:0 }}">
+                            <td>{{ patient.id }}</td>
+                            <td>
+                                <img src="{{ patient.user.profile_picture.url|default:'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&h=500&fit=crop' }}"
+                                    class="patient-avatar rounded-circle" alt="{{ patient.user.get_full_name }}">
+                            </td>
+                            <td>{{ patient.user.get_full_name }}</td>
+                            <td>{{ patient.user.email }}</td>
+                            <td>
+                                <span class="badge {% if patient.gender == 'Male' %}bg-info{% else %}bg-primary{% endif %}">
+                                    {% if patient.gender == 'Male' %}
+                                    ذكر
+                                    {% else %}
+                                    أنثى
+                                    {% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-column align-items-center">
+                                    <strong class="small text-muted mb-1">إجمالي الحجوزات</strong>
+                                    <span class="badge rounded-pill bg-success fs-6 px-3">{{ patient.booking_count }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if patient.last_booking %}
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-clock text-warning me-2"></i>
+                                    <span>{{ patient.last_booking.booking_date }}</span>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">لا يوجد حجوزات سابقة</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="#" class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-outline-success" title="حجز جديد">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        {% endfor %}
     </div>
 
     <!-- No Results Message -->
@@ -142,44 +161,42 @@
 
 {% block extra_css %}
 <style>
-    .hover-shadow {
-        transition: box-shadow 0.3s ease;
+    .table th {
+        font-weight: 600;
     }
-
-    .hover-shadow:hover {
-        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
     }
-
-    .patient-img {
-        height: 200px;
+    
+    .patient-avatar {
+        width: 40px;
+        height: 40px;
         object-fit: cover;
+        border: 2px solid #eee;
     }
-
-    .patient-id-badge {
-        position: absolute;
-        bottom: 10px;
-        right: 10px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 0.8rem;
-    }
-
-    .detail-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 0.5rem;
-        color: #666;
-    }
-
-    .detail-item i {
-        width: 16px;
-    }
-
-    .patient-card.filtered {
+    
+    /* Стили для состояния строки фильтрации */
+    .patient-row.filtered {
         display: none;
+    }
+    
+    /* Добавляем направление текста справа налево для таблицы */
+    .table {
+        direction: rtl;
+        text-align: right;
+    }
+    
+    /* Выравнивание некоторых столбцов по центру */
+    .table th:nth-child(2),
+    .table td:nth-child(2),
+    .table th:nth-child(5),
+    .table td:nth-child(5),
+    .table th:nth-child(6),
+    .table td:nth-child(6),
+    .table th:nth-child(8),
+    .table td:nth-child(8) {
+        text-align: center;
     }
 </style>
 {% endblock %}
@@ -191,8 +208,9 @@
         const genderFilter = document.getElementById('genderFilter');
         const ageFilter = document.getElementById('ageFilter');
         const locationFilter = document.getElementById('locationFilter');
-        const patientCards = document.querySelectorAll('.patient-card');
+        const patientRows = document.querySelectorAll('.patient-row');
         const noResults = document.getElementById('noResults');
+        const patientTable = document.getElementById('patientTable');
 
         function filterPatients() {
             const searchTerm = patientSearch.value.toLowerCase();
@@ -202,46 +220,47 @@
 
             let visibleCount = 0;
 
-            patientCards.forEach(card => {
-                const name = card.dataset.name.toLowerCase();
-                const id = card.dataset.id.toLowerCase();
-                const cardGender = card.dataset.gender;
-                const cardAge = parseInt(card.dataset.age);
-                const cardLocation = card.dataset.location.toLowerCase();
+            patientRows.forEach(row => {
+                const name = row.dataset.name.toLowerCase();
+                const id = row.dataset.id.toLowerCase();
+                const rowGender = row.dataset.gender;
+                const rowAge = parseInt(row.dataset.age);
+                // Podemos obtener la ubicación de las celdas si es necesario
+                // const rowLocation = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
 
                 let isVisible = true;
 
-                // Search filter
-                if (searchTerm && !name.includes(searchTerm) && !id.includes(searchTerm)) {
+                // Filtro de búsqueda (nombre, ID o correo electrónico)
+                if (searchTerm && !name.includes(searchTerm) && !id.includes(searchTerm) && 
+                    !row.querySelector('td:nth-child(4)').textContent.toLowerCase().includes(searchTerm)) {
                     isVisible = false;
                 }
 
-                // Gender filter
-                if (gender && cardGender !== gender) {
+                // Filtro de género
+                if (gender && rowGender !== gender) {
                     isVisible = false;
                 }
 
-                // Age range filter
+                // Filtro de rango de edad
                 if (ageRange) {
                     const [min, max] = ageRange.split('-').map(num => num.replace('+', ''));
-                    if (max) {
-                        if (cardAge < parseInt(min) || cardAge > parseInt(max)) {
-                            isVisible = false;
-                        }
-                    } else {
-                        if (cardAge < parseInt(min)) {
-                            isVisible = false;
-                        }
+                    if ((min && rowAge < parseInt(min)) || (max && rowAge > parseInt(max))) {
+                        isVisible = false;
                     }
                 }
 
-                // Location filter
-                if (location && !cardLocation.includes(location)) {
-                    isVisible = false;
-                }
+                // Location filter - commented out as we may not have location data now
+                // if (location && !rowLocation.includes(location)) {
+                //     isVisible = false;
+                // }
 
-                card.classList.toggle('filtered', !isVisible);
-                if (isVisible) visibleCount++;
+                // Aplicar filtro
+                if (isVisible) {
+                    row.classList.remove('filtered');
+                    visibleCount++;
+                } else {
+                    row.classList.add('filtered');
+                }
             });
 
             // Show no results message if no visible patients

@@ -8,6 +8,7 @@ from .models import HospitalPaymentMethod, Payment
 from bookings.models import Booking
 from django.http import HttpResponseBadRequest
 from patients.models import Patients
+from django.utils.translation import gettext_lazy as _
 
 # Create your views here.
 
@@ -226,6 +227,34 @@ def verify_payment(request, booking_id):
                 booking.status = 'confirmed'
 
             booking.save()
+
+            # إرسال إشعار للمريض بتأكيد الدفع وتأكيد الحجز
+            try:
+                # الحصول على المريض من الحجز
+                patient_user = booking.patient.user
+                hospital_name = booking.hospital.name
+                appointment_date = booking.booking_date
+                doctor_name = booking.doctor.full_name
+
+                # إنشاء رسالة الإشعار
+                message = f"🎉 *تأكيد الدفع والحجز*\n\n"
+                message += f"تم تأكيد الدفع الخاص بحجزك من قبل {hospital_name}\n"
+                message += f"الطبيب: {doctor_name}\n"
+                message += f"التاريخ: {appointment_date}\n"
+                message += f"الحالة: ✅ مؤكد\n"
+                message += f"\nشكراً لاستخدامك نظام حجز المواعيد الطبية."
+
+                # إنشاء الإشعار
+                Notifications.objects.create(
+                    sender=request.user,  # مستخدم المستشفى الذي أكد الدفع
+                    user=patient_user,    # المريض
+                    message=message,
+                    notification_type='2'  # نوع الإشعار: نجاح
+                )
+            except Exception as e:
+                # في حالة وجود خطأ في إرسال الإشعار، لا نريد إيقاف العملية الأساسية
+                # نعالج الخطأ ونستمر
+                print(f"Error sending notification: {str(e)}")
 
             return JsonResponse({
                 'status': 'success',

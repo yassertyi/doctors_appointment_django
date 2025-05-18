@@ -4,12 +4,13 @@ from django.contrib import messages
 from django.db.models import Q
 from .models import Notifications
 from django.contrib.auth import get_user_model
+from hospital_staff.permissions import has_permission
 
 User = get_user_model()
 
 
 @login_required(login_url='/user/login')
-
+@has_permission('manage_notifications')
 def send_notification(request):
     if request.method == 'POST':
         recipients = request.POST.get('recipients')
@@ -44,6 +45,7 @@ def send_notification(request):
     return redirect('hospitals:index')
 
 @login_required(login_url='/user/login')
+@has_permission('manage_notifications')
 
 def mark_as_read(request, notification_id):
     try:
@@ -55,6 +57,7 @@ def mark_as_read(request, notification_id):
     return redirect('hospitals:index')
 
 @login_required(login_url='/user/login')
+@has_permission('manage_notifications')
 
 def mark_as_unread(request, notification_id):
     try:
@@ -69,6 +72,7 @@ def mark_as_unread(request, notification_id):
 from django.http import JsonResponse
 
 @login_required(login_url='/user/login')
+@has_permission('manage_notifications')
 def mark_all_as_read(request):
     if request.method == 'POST':
         try:

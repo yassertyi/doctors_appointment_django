@@ -10,8 +10,10 @@ from django.urls import reverse
 from .models import Advertisement
 from .forms import AdvertisementForm
 from hospitals.models import Hospital
+from hospital_staff.permissions import has_permission
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def advertisement_list(request):
     """View to list all advertisements for a hospital"""
     user = request.user
@@ -128,6 +130,7 @@ def advertisement_list(request):
     return render(request, 'frontend/dashboard/hospitals/sections/advertisements/advertisement_list.html', context)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def add_advertisement(request):
     """View to add a new advertisement"""
     user = request.user
@@ -166,6 +169,7 @@ def add_advertisement(request):
     return render(request, 'frontend/dashboard/hospitals/index.html', context)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def edit_advertisement(request, advertisement_id):
     """View to edit an existing advertisement"""
     user = request.user
@@ -237,6 +241,7 @@ def edit_advertisement(request, advertisement_id):
     return render(request, 'frontend/dashboard/hospitals/sections/advertisements/advertisement_form.html', context)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def delete_advertisement(request, advertisement_id):
     """View to delete an advertisement"""
     user = request.user
@@ -266,6 +271,7 @@ def delete_advertisement(request, advertisement_id):
     return render(request, 'frontend/dashboard/hospitals/sections/advertisements/advertisement_confirm_delete.html', context)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def advertisement_detail(request, advertisement_id):
     """View to see details of an advertisement"""
     user = request.user
@@ -316,6 +322,7 @@ def advertisement_detail(request, advertisement_id):
     return render(request, 'frontend/dashboard/hospitals/sections/advertisements/advertisement_detail_fullwidth.html', context)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def load_advertisement_form(request):
     """View to load the advertisement form via AJAX"""
     user = request.user
@@ -336,6 +343,7 @@ def load_advertisement_form(request):
     return JsonResponse({'html': html})
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def load_edit_form(request, advertisement_id):
     """View to load the advertisement edit form via AJAX"""
     user = request.user
@@ -395,6 +403,7 @@ def load_edit_form(request, advertisement_id):
     })
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def delete_additional_image(request, image_id):
     """View to delete an additional image"""
     if request.method != 'POST':
@@ -437,6 +446,7 @@ def delete_additional_image(request, image_id):
 
 
 @login_required(login_url='/user/login')
+@has_permission('manage_advertisements')
 def ajax_delete_advertisement(request, advertisement_id):
     """View to delete an advertisement via AJAX"""
     if request.method != 'POST':

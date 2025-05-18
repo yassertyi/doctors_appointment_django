@@ -8,7 +8,7 @@ import traceback
 from django.db.models import Prefetch
 from doctors.models import Doctor, DoctorSchedules, DoctorShifts, DoctorPricing
 from hospitals.models import Hospital
-from django.contrib.auth.decorators import login_required
+from hospital_staff.permissions import has_permission
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 import json
@@ -408,7 +408,7 @@ def index(request):
 
 
 @login_required(login_url='/user/login')
-
+@has_permission('view_blog')
 def blog_list(request):
     user = request.user
     hospital = get_object_or_404(Hospital, user=user)
@@ -425,6 +425,7 @@ def blog_list(request):
 
 
 @login_required(login_url='/user/login')
+@has_permission('view_blog')
 def blog_list_json(request):
     user = request.user
     hospital = get_object_or_404(Hospital, user=user)
@@ -447,6 +448,8 @@ def blog_list_json(request):
 
 @login_required(login_url='/user/login')
 
+@login_required(login_url='/user/login')
+@has_permission('view_blog')
 def blog_pending_list(request):
     user = request.user
     hospital = get_object_or_404(Hospital, user=user)
@@ -522,6 +525,7 @@ def edit_blog(request, blog_id):
 
 
 @login_required(login_url='/user/login')
+@has_permission('view_blog')
 def blog_detail(request, blog_id):
     user = request.user
     hospital = get_object_or_404(Hospital, user=user)
@@ -723,7 +727,7 @@ def hospital_request_status(request, request_id):
 
 
 @login_required(login_url='/user/login')
-
+@has_permission('manage_doctors')
 def filter_doctors(request):
     hospital = get_object_or_404(Hospital, user=request.user)
 
@@ -789,6 +793,7 @@ def filter_doctors(request):
 
 
 @login_required(login_url='/user/login')
+@has_permission('manage_doctors')
 def add_doctor(request):
     if request.method == "POST":
         full_name = request.POST.get("full_name")
@@ -1064,6 +1069,14 @@ def accept_appointment(request, booking_id):
                 'message': 'ليس لديك صلاحية للقيام بهذا الإجراء',
                 'toast_class': 'bg-danger'
             }, status=403)
+            
+        # التحقق من حالة الدفع قبل قبول الحجز
+        if not booking.payment_verified:
+            return JsonResponse({
+                'status': 'error',
+                'message': 'يجب تأكيد الدفع أولاً قبل قبول الحجز',
+                'toast_class': 'bg-warning'
+            }, status=400)
 
         # تحديث البيانات
         booking.status = 'confirmed'
@@ -2432,6 +2445,7 @@ def get_doctor(request, doctor_id):
 
 @login_required(login_url='/user/login')
 @csrf_exempt  # Note: We're keeping csrf_exempt for now but will handle CSRF manually
+@has_permission('manage_doctors')
 def update_doctor(request, doctor_id):
     print("="*50)
     print(f"Update doctor request method: {request.method}")
@@ -2570,6 +2584,7 @@ def update_doctor(request, doctor_id):
         }, status=500)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_doctors')
 def delete_doctor(request, doctor_id):
     print("="*50)
     print(f"Delete doctor request method: {request.method}")
@@ -2661,6 +2676,7 @@ def delete_doctor(request, doctor_id):
         }, status=500)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_doctors')
 def get_doctor_history(request, doctor_id):
     try:
         print("="*50)
@@ -2803,6 +2819,7 @@ def add_existing_doctor(request):
     }, status=400)
 
 @login_required(login_url='/user/login')
+@has_permission('manage_doctors')
 def add_doctor_form(request):
     user = request.user
     hospital = get_object_or_404(Hospital, user=user)
@@ -2858,6 +2875,7 @@ def doctor_details(request, doctor_id):
         return redirect('hospitals:index')
 
 @login_required(login_url='/user/login')
+
 def hospital_patients(request):
     """
     عرض المرضى الذين قاموا بالحجز في المستشفى

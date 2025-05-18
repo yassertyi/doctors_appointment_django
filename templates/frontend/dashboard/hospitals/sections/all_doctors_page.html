@@ -424,7 +424,7 @@ function deleteDoctor(doctorId) {
         })
         .catch(error => {
             console.error('Error deleting doctor:', error);
-            alert('حدث خطأ أثناء حذف الطبيب: ' + error.message);
+            alert('ليس لديك الصلاحيه لهذ الاجراء ' + error.message);
         });
     }
 }
@@ -505,7 +505,7 @@ function updateDoctor(event, doctorId) {
     })
     .catch(error => {
         console.error('Error updating doctor:', error);
-        alert('حدث خطأ أثناء تحديث بيانات الطبيب: ' + error.message);
+        alert('ليس لديك الصلاحيه لهذ الاجراء  ' + error.message);
     });
 }
 
@@ -566,7 +566,7 @@ function togglePriceHistory(doctorId, doctorName) {
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('حدث خطأ أثناء جلب سجل الأسعار');
+            alert('ليس لديك الصلاحيه لهذ الاجراء ');
         });
     } else {
         // إخفاء الصف

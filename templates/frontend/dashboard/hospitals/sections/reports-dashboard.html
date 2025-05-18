@@ -30,28 +30,14 @@
             </div>
             <h5 class="card-title">تقارير الأطباء</h5>
             <p class="card-text">أداء الأطباء وتقييمات المرضى والإيرادات</p>
-            <a href="javascript:;" data-method="doctor_reports" class="btn btn-success mt-2">
+                   <a href="javascript:;" data-method="doctor_reports" data-section="doctor_reports" class="btn btn-primary mt-2">
               <i class="fas fa-chart-bar me-2"></i>عرض التقارير
             </a>
           </div>
         </div>
       </div>
       
-      <!-- بطاقة التقارير المالية -->
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100 border-0 shadow-sm hover-card">
-          <div class="card-body text-center p-4">
-            <div class="mb-3">
-              <i class="fas fa-file-invoice-dollar fa-3x text-warning"></i>
-            </div>
-            <h5 class="card-title">التقارير المالية</h5>
-            <p class="card-text">المدفوعات والإيرادات والمصاريف الشهرية</p>
-            <a href="javascript:;" data-method="financial_reports" class="btn btn-warning mt-2">
-              <i class="fas fa-chart-pie me-2"></i>عرض التقارير
-            </a>
-          </div>
-        </div>
-      </div>
+   
       
       <!-- بطاقة تقارير المرضى -->
       <div class="col-md-6 col-lg-4 mb-4">
@@ -69,37 +55,7 @@
         </div>
       </div>
       
-      <!-- بطاقة تقارير التخصصات -->
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100 border-0 shadow-sm hover-card">
-          <div class="card-body text-center p-4">
-            <div class="mb-3">
-              <i class="fas fa-stethoscope fa-3x text-danger"></i>
-            </div>
-            <h5 class="card-title">تقارير التخصصات</h5>
-            <p class="card-text">تحليل الأقسام الطبية والتخصصات بالمستشفى</p>
-            <a href="javascript:;" data-method="specialization_reports" class="btn btn-danger mt-2">
-              <i class="fas fa-chart-bar me-2"></i>عرض التقارير
-            </a>
-          </div>
-        </div>
-      </div>
-      
-      <!-- بطاقة تقارير الإشغال -->
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100 border-0 shadow-sm hover-card">
-          <div class="card-body text-center p-4">
-            <div class="mb-3">
-              <i class="fas fa-procedures fa-3x text-secondary"></i>
-            </div>
-            <h5 class="card-title">تقارير الإشغال</h5>
-            <p class="card-text">معدلات إشغال الغرف والعيادات والمواعيد</p>
-            <a href="javascript:;" data-method="occupancy_reports" class="btn btn-secondary mt-2">
-              <i class="fas fa-chart-line me-2"></i>عرض التقارير
-            </a>
-          </div>
-        </div>
-      </div>
+   
     </div>
   </div>
 </div>
@@ -162,7 +118,48 @@
       // معالجة النقر على أزرار التقارير
       $(".reports_dashboard [data-method]").click(function() {
         const method = $(this).data("method");
+        const section = $(this).data("section");
         console.log("تم النقر على تقرير: " + method);
+        
+        // إذا كان هناك قسم محدد، يتم الانتقال إليه
+        if (section && typeof window.showSection === 'function') {
+          window.showSection(section);
+        }
+        
+        // معالجة خاصة لكل نوع تقرير
+        switch(method) {
+          case 'booking_reports':
+            // تم التعامل معه بالفعل عبر القسم
+            break;
+            
+          case 'doctor_reports':
+            // الانتقال إلى صفحة تقارير الأطباء بشكل منفصل
+            // إخفاء جميع الأقسام
+            $(".section").addClass("d-none");
+            
+            // إظهار قسم تقارير الأطباء
+            $(".doctor_reports.section").removeClass("d-none");
+            
+            // إخفاء القائمة الجانبية للحصول على مساحة أكبر
+            $(".theiaStickySidebar").parent().hide();
+            
+            // تطبيق عرض كامل للصفحة
+            $(".content .container").removeClass("container").addClass("container-fluid");
+            
+            // تغيير عنوان الصفحة
+            if (typeof updateBreadcrumb === 'function') {
+              updateBreadcrumb("تقارير الأطباء");
+            }
+            break;
+            
+          case 'financial_reports':
+          case 'patient_reports':
+          case 'specialization_reports':
+          case 'occupancy_reports':
+            // سيتم تفعيل هذه التقارير لاحقًا
+            alert('سيتم تفعيل هذه التقارير قريبًا');
+            break;
+        }
       });
     }
     

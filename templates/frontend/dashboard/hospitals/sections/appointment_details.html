@@ -190,6 +190,9 @@
                             بواسطة: {{ booking.payment_verified_by.get_full_name }}
                             {% endif %}
                           </div>
+                          <input type="hidden" id="paymentVerified" value="true">
+                          {% else %}
+                          <input type="hidden" id="paymentVerified" value="false">
                           {% endif %}
                         </div>
                       </div>
@@ -471,6 +474,47 @@ function getCSRFToken() {
 
 // دالة محسنة لقبول الحجز
 function acceptAppointment(bookingId) {
+  // التحقق من حالة تأكيد الدفع قبل إظهار تأكيد قبول الحجز
+  const paymentVerified = document.getElementById('paymentVerified');
+  if (!paymentVerified || paymentVerified.value !== 'true') {
+    // إنشاء وإظهار تنبيه بارز
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-warning alert-dismissible fade show mb-3';
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+        <div>
+          <h5><strong>تنبيه!</strong> يجب تأكيد الدفع أولاً قبل قبول الحجز</h5>
+          <p class="mb-0">يرجى التأكد من تفاصيل الدفع وتأكيده قبل محاولة قبول هذا الحجز.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // وضع التنبيه أعلى محتوى الصفحة
+    const contentDiv = document.querySelector('.content .container');
+    contentDiv.insertBefore(alertDiv, contentDiv.firstChild);
+
+    // التمرير إلى قسم الدفع مباشرة
+    const paymentSection = document.querySelector('.card-header.bg-warning');
+    if (paymentSection) {
+      setTimeout(() => {
+        paymentSection.scrollIntoView({ behavior: 'smooth' });
+        // إبراز زر تأكيد الدفع
+        const verifyButton = document.getElementById('verifyPaymentBtn');
+        if (verifyButton) {
+          // إضافة تأثير نبض مضاعف للفت الانتباه
+          verifyButton.classList.add('btn-pulse');
+          verifyButton.classList.add('btn-lg');
+          verifyButton.focus();
+        }
+      }, 300);
+    }
+    return;
+  }
+
+  // استكمال العملية إذا تم تأكيد الدفع
   if (confirm('هل أنت متأكد من قبول هذا الحجز؟')) {
     fetch(`/hospitals/accept_appointment/${bookingId}/`, {
       method: 'POST',
@@ -484,19 +528,66 @@ function acceptAppointment(bookingId) {
     .then(response => response.json())
     .then(data => {
       if (data.status === 'success') {
-        window.location.href = window.location.pathname + '?message=' + encodeURIComponent(data.message) + '&type=success';
+        window.location.href = window.location.pathname + '?message=' + encodeURIComponent('تم قبول الحجز بنجاح') + '&type=success';
+      } else if (data.status === 'error') {
+        // عرض أي رسائل خطأ أخرى
+        showToast(data.message || 'حدث خطأ', data.toast_class || 'bg-danger', 5000);
       } else {
-        showToast(data.message || 'حدث خطأ', 'bg-danger', 5000);
+        showToast(data.message || 'حدث خطأ غير معروف', 'bg-danger', 5000);
       }
     })
     .catch(error => {
       showToast('حدث خطأ أثناء معالجة الطلب', 'bg-danger', 5000);
+      console.error('Error:', error);
     });
   }
 }
 
 // دالة محسنة لإلغاء الحجز
 function cancelAppointment(bookingId) {
+  // التحقق من حالة رفض الدفع قبل السماح برفض الحجز
+  const paymentStatusElement = document.querySelector('.payment-status-badge');
+  const paymentRejected = paymentStatusElement && paymentStatusElement.classList.contains('bg-danger');
+
+  if (!paymentRejected) {
+    // إنشاء وإظهار تنبيه بارز
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show mb-3';
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+      <div class="d-flex align-items-center">
+        <i class="fas fa-exclamation-circle fa-2x me-3"></i>
+        <div>
+          <h5><strong>تنبيه!</strong> يجب رفض الدفع أولاً قبل إلغاء الحجز</h5>
+          <p class="mb-0">يرجى رفض الدفع أولاً من خلال الضغط على زر "رفض الدفع" في قسم معلومات الدفع.</p>
+        </div>
+      </div>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+
+    // وضع التنبيه أعلى محتوى الصفحة
+    const contentDiv = document.querySelector('.content .container');
+    contentDiv.insertBefore(alertDiv, contentDiv.firstChild);
+
+    // التمرير إلى قسم الدفع مباشرة
+    const paymentSection = document.querySelector('.card-header.bg-warning');
+    if (paymentSection) {
+      setTimeout(() => {
+        paymentSection.scrollIntoView({ behavior: 'smooth' });
+        // إبراز زر رفض الدفع
+        const rejectButton = document.getElementById('rejectPaymentBtn');
+        if (rejectButton) {
+          // إضافة تأثير نبض للفت الانتباه
+          rejectButton.classList.add('btn-pulse');
+          rejectButton.classList.add('btn-lg');
+          rejectButton.focus();
+        }
+      }, 300);
+    }
+    return;
+  }
+
+  // إذا كان الدفع مرفوضاً، يمكن المتابعة برفض الحجز
   if (confirm('هل أنت متأكد من إلغاء هذا الحجز؟')) {
     fetch(`/hospitals/cancel_appointment/${bookingId}/`, {
       method: 'POST',

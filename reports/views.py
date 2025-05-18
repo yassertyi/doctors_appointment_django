@@ -169,3 +169,5 @@ def booking_reports_page(request):
     Vista para renderizar la página de reportes de reservas.
     """
     return render(request, 'frontend/dashboard/hospitals/sections/booking-reports.html')
+
+

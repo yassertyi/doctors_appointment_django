@@ -86,6 +86,20 @@ class Command(BaseCommand):
                 'codename': 'manage_notifications',
                 'description': _('إرسال وإدارة الإشعارات')
             },
+            
+            # صلاحيات إدارة المدونة
+            {
+                'name': _('عرض المدونة'),
+                'codename': 'view_blog',
+                'description': _('عرض وإدارة مقالات المدونة')
+            },
+            
+            # صلاحيات إدارة الإعلانات
+            {
+                'name': _('إدارة الإعلانات'),
+                'codename': 'manage_advertisements',
+                'description': _('إضافة وتعديل وحذف الإعلانات')
+            },
         ]
         
         # إنشاء الصلاحيات

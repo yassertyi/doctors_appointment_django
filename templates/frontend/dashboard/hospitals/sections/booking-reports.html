@@ -1,4 +1,7 @@
 <!-- صفحة تقارير الحجوزات -->
+<!-- إضافة مكتبات تصدير PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <div class="col-md-7 col-lg-8 col-xl-9 booking_reports section d-none">
   <div class="card">
     <div class="card-header">
@@ -63,7 +66,7 @@
               <div class="col-md-6 text-md-end">
                 <p class="mb-1"><strong>إجمالي الحجوزات:</strong> <span id="total-appointments" class="badge bg-primary"></span></p>
                 <p class="mb-1"><strong>إجمالي الإيرادات:</strong> <span id="total-revenue" class="badge bg-success"></span></p>
-                <button id="export-pdf" class="btn btn-sm btn-danger mt-2">
+                <button id="export-pdf" class="btn btn-sm btn-danger mt-2" onclick="newExportReportToPDF()">
                   <i class="fas fa-file-pdf me-1"></i> تصدير PDF
                 </button>
               </div>
@@ -630,9 +633,16 @@
   
   // وظيفة تصدير التقرير كملف PDF
   function exportReportToPDF() {
+    // التحقق من وجود بيانات للتصدير
+    if (!allAppointments || allAppointments.length === 0) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+    
     // إضافة عنصر لعرض رسالة التحميل
     $("body").append('<div id="pdf-loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: rgba(0,0,0,0.5); z-index: 9999;"><div class="bg-white p-4 rounded shadow"><div class="spinner-border text-primary me-3" role="status"></div><span class="fs-5">جاري إنشاء التقرير...</span></div></div>');
     
+    // إعطاء وقت كافٍ لتحميل الصفحة قبل بدء التصدير
     setTimeout(function() {
       try {
         // إنشاء عنصر لعرض تقرير PDF
@@ -680,128 +690,137 @@
         
         // إضافة محتوى التقرير إلى العنصر
         reportElement.innerHTML = reportContent;
+
+        // إعطاء وقت للعنصر ليتم تحميله في DOM
+        document.body.appendChild(reportElement);
+
+        // إضافة قسم جدول البيانات
+        const tableSection = document.createElement('div');
+        tableSection.innerHTML = `<h3 style="margin-top: 20px; margin-bottom: 10px;">قائمة الحجوزات</h3>`;
+        reportElement.appendChild(tableSection);
         
-        // التقاط الرسوم البيانية
-        Promise.all([
-          html2canvas(document.getElementById('status-chart')),
-          html2canvas(document.getElementById('daily-chart'))
-        ]).then(function(canvases) {
-          const statusChartCanvas = canvases[0];
-          const dailyChartCanvas = canvases[1];
+        // إنشاء جدول بيانات الحجوزات
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.marginBottom = '20px';
+        
+        // إنشاء رأس الجدول
+        let tableHTML = `
+          <thead>
+            <tr>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">رقم الحجز</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">اسم المريض</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">اسم الطبيب</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التخصص</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التاريخ</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التوقيت</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">الحالة</th>
+              <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">المبلغ</th>
+            </tr>
+          </thead>
+          <tbody>
+        `;
+        
+        // إضافة صفوف الجدول (أقصى 20 حجز)
+        const maxRows = Math.min(allAppointments.length, 20);
+        for (let i = 0; i < maxRows; i++) {
+          const app = allAppointments[i];
+          const rowColor = i % 2 === 0 ? '#f9f9f9' : 'white';
           
-          // تحويل الكانفاس إلى صور
-          const statusChartImg = statusChartCanvas.toDataURL('image/png');
-          const dailyChartImg = dailyChartCanvas.toDataURL('image/png');
-          
-          // إنشاء قسم الرسوم البيانية
-          const chartsSection = document.createElement('div');
-          chartsSection.innerHTML = `
-            <h3 style="margin-top: 20px; margin-bottom: 10px;">الرسوم البيانية</h3>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-              <div style="flex: 1; margin: 0 10px; text-align: center;">
-                <p style="font-weight: bold; margin-bottom: 5px;">توزيع الحجوزات حسب الحالة</p>
-                <img src="${statusChartImg}" style="max-width: 100%;" />
-              </div>
-              <div style="flex: 1; margin: 0 10px; text-align: center;">
-                <p style="font-weight: bold; margin-bottom: 5px;">عدد الحجوزات اليومية</p>
-                <img src="${dailyChartImg}" style="max-width: 100%;" />
-              </div>
-            </div>
+          tableHTML += `
+            <tr style="background-color: ${rowColor};">
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.id}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.patient_name}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.doctor_name}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.speciality}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.date}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.time}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${getStatusText(app.status)}</td>
+              <td style="padding: 8px; border: 1px solid #ddd;">${app.amount} ر.ي</td>
+            </tr>
           `;
-          reportElement.appendChild(chartsSection);
+        }
+        
+        tableHTML += '</tbody>';
+        table.innerHTML = tableHTML;
+        tableSection.appendChild(table);
+        
+        // إضافة تذييل التقرير
+        const footer = document.createElement('div');
+        footer.innerHTML = `
+          <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
+            ${hospitalName} - تقرير الحجوزات - تم إنشاؤه بتاريخ ${today.toLocaleDateString('ar')}
+          </div>
+        `;
+        reportElement.appendChild(footer);
+        
+        // انتظر لمدة أطول للتأكد من تحميل جميع العناصر
+        setTimeout(function() {
+          console.log('جاري تحضير ملف PDF...');
           
-          // إضافة قسم جدول البيانات
-          const tableSection = document.createElement('div');
-          tableSection.innerHTML = `<h3 style="margin-top: 20px; margin-bottom: 10px;">قائمة الحجوزات</h3>`;
-          reportElement.appendChild(tableSection);
-          
-          // إنشاء جدول بيانات الحجوزات
-          const table = document.createElement('table');
-          table.style.width = '100%';
-          table.style.borderCollapse = 'collapse';
-          table.style.marginBottom = '20px';
-          
-          // إنشاء رأس الجدول
-          let tableHTML = `
-            <thead>
-              <tr>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">رقم الحجز</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">اسم المريض</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">اسم الطبيب</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التخصص</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التاريخ</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">التوقيت</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">الحالة</th>
-                <th style="padding: 8px; text-align: right; border: 1px solid #ddd; background-color: #20c0f3; color: white;">المبلغ</th>
-              </tr>
-            </thead>
-            <tbody>
-          `;
-          
-          // إضافة صفوف الجدول (أقصى 20 حجز)
-          const maxRows = Math.min(allAppointments.length, 20);
-          for (let i = 0; i < maxRows; i++) {
-            const app = allAppointments[i];
-            const rowColor = i % 2 === 0 ? '#f9f9f9' : 'white';
-            
-            tableHTML += `
-              <tr style="background-color: ${rowColor};">
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.id}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.patient_name}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.doctor_name}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.speciality}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.date}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.time}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${getStatusText(app.status)}</td>
-                <td style="padding: 8px; border: 1px solid #ddd;">${app.amount} ر.ي</td>
-              </tr>
-            `;
-          }
-          
-          tableHTML += '</tbody>';
-          table.innerHTML = tableHTML;
-          tableSection.appendChild(table);
-          
-          // إضافة تذييل التقرير
-          const footer = document.createElement('div');
-          footer.innerHTML = `
-            <div style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
-              ${hospitalName} - تقرير الحجوزات - تم إنشاؤه بتاريخ ${today.toLocaleDateString('ar')}
-            </div>
-          `;
-          reportElement.appendChild(footer);
-          
-          // انتظر لحظة للتأكد من تحميل جميع العناصر
-          setTimeout(function() {
-            // إعدادات تصدير PDF
-            const opt = {
-              margin: [10, 10, 10, 10],
-              filename: `تقرير_الحجوزات_${formatDate(today)}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true, logging: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' },
-              fontFaces: [
-                { family: 'Cairo', style: 'normal', src: 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap' }
-              ]
-            };
-          
-            // تنفيذ التصدير
+          // إعدادات تصدير PDF محسنة
+          const opt = {
+            margin: [15, 15, 15, 15],
+            filename: `تقرير_الحجوزات_${formatDate(today)}.pdf`,
+            image: { type: 'jpeg', quality: 1 },
+            html2canvas: { 
+              scale: 2, 
+              useCORS: true, 
+              logging: true,
+              allowTaint: true,
+              foreignObjectRendering: false,
+              letterRendering: true,
+              removeContainer: true
+            },
+            jsPDF: { 
+              unit: 'mm', 
+              format: 'a4', 
+              orientation: 'landscape',
+              compress: true,
+              putOnlyUsedFonts: true,
+              precision: 16
+            },
+            fontFaces: [
+              { family: 'Cairo', style: 'normal', src: 'https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap' }
+            ]
+          };
+        
+          // تنفيذ التصدير بطريقة محسنة
+          try {
             html2pdf()
               .from(reportElement)
               .set(opt)
-              .save()
-              .then(function() {
-                // إزالة عناصر التقرير والتحميل
-                reportElement.remove();
+              .outputPdf() // التحقق من وجود محتوى أولاً
+              .then(function(pdf) {
+                if (pdf && pdf.length > 100) { // التأكد من أن الملف يحتوي على بيانات
+                  // إنشاء وتنزيل الملف
+                  html2pdf()
+                    .from(reportElement)
+                    .set(opt)
+                    .save()
+                    .then(function() {
+                      // إزالة عناصر التقرير والتحميل
+                      reportElement.remove();
+                      $("#pdf-loading").remove();
+                      console.log('PDF generated successfully');
+                    });
+                } else {
+                  console.error('الملف فارغ أو غير صالح');
+                  $("#pdf-loading").remove();
+                  alert('حدث خطأ أثناء إنشاء ملف PDF: الملف فارغ');
+                }
+              }).catch(function(error) {
+                console.error('خطأ في معالجة PDF:', error);
                 $("#pdf-loading").remove();
-                console.log('PDF generated successfully');
+                alert('حدث خطأ أثناء إنشاء ملف PDF: ' + error.message);
               });
-          }, 500);
-        }).catch(function(error) {
-          console.error('Error capturing charts:', error);
-          $("#pdf-loading").remove();
-          alert("حدث خطأ أثناء إنشاء ملف PDF: " + error.message);
-        });
+          } catch (error) {
+            console.error('خطأ أثناء إنشاء PDF:', error);
+            $("#pdf-loading").remove();
+            alert('حدث خطأ أثناء إنشاء ملف PDF: ' + error.message);
+          }
+        }, 1500); // زيادة وقت الانتظار إلى 1.5 ثانية
       } catch (error) {
         console.error('Error generating PDF:', error);
         $("#pdf-loading").remove();
@@ -877,5 +896,203 @@
         cancelled
       }
     };
+  }
+
+  // متغير للتحقق من أن عملية التصدير ليست قيد التنفيذ بالفعل
+  let isExporting = false;
+
+  // وظيفة تصدير التقرير باستخدام html2canvas
+  function newExportReportToPDF() {
+    // التحقق من أن عملية التصدير ليست قيد التنفيذ بالفعل
+    if (isExporting) {
+      console.log('عملية التصدير قيد التنفيذ بالفعل');
+      return;
+    }
+    
+    // التحقق من وجود بيانات للتصدير
+    if (!allAppointments || allAppointments.length === 0) {
+      alert("لا توجد بيانات للتصدير");
+      return;
+    }
+    
+    // تعيين حالة التصدير إلى قيد التنفيذ
+    isExporting = true;
+    
+    // إضافة عنصر لعرض رسالة التحميل
+    $("body").append('<div id="pdf-loading" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: rgba(0,0,0,0.5); z-index: 9999;"><div class="bg-white p-4 rounded shadow"><div class="spinner-border text-primary me-3" role="status"></div><span class="fs-5">جاري إنشاء التقرير...</span></div></div>');
+    
+    try {
+      // نسخ منطقة تقرير النتائج للتصدير
+      const reportContentEl = document.getElementById('report-result');
+      
+      // التأكد من عرض منطقة التقرير
+      reportContentEl.classList.remove('d-none');
+      
+      // إنشاء نسخة من التقرير للتصدير
+      const reportClone = reportContentEl.cloneNode(true);
+      reportClone.style.background = '#fff';
+      reportClone.style.padding = '20px';
+      reportClone.style.border = 'none';
+      reportClone.style.width = '100%';
+      
+      // إزالة زر تصدير PDF من النسخة
+      const exportButton = reportClone.querySelector('#export-pdf');
+      if (exportButton) {
+        exportButton.parentNode.removeChild(exportButton);
+      }
+      
+      // إزالة منطقة الرسوم البيانية من النسخة
+      const chartRows = reportClone.querySelectorAll('.row.mb-4');
+      if (chartRows && chartRows.length > 0) {
+        chartRows[0].parentNode.removeChild(chartRows[0]);
+      }
+      
+      // تعديل جدول التقرير لإظهار جميع النتائج بدلاً من الصفحة الحالية فقط
+      const tableContainer = reportClone.querySelector('.table-responsive');
+      if (tableContainer) {
+        // إنشاء جدول جديد لعرض جميع النتائج
+        const originalTable = tableContainer.querySelector('table');
+        
+        if (originalTable) {
+          // إنشاء جدول جديد مع نفس الفئات
+          const newTable = document.createElement('table');
+          newTable.className = originalTable.className;
+          newTable.innerHTML = `
+            <thead>
+              <tr>
+                <th>رقم الحجز</th>
+                <th>اسم المريض</th>
+                <th>اسم الطبيب</th>
+                <th>التخصص</th>
+                <th>التاريخ</th>
+                <th>الوقت</th>
+                <th>الحالة</th>
+                <th>المبلغ</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          `;
+          
+          // إضافة جميع الحجوزات إلى الجدول (وليس فقط المعروضة حاليًا)
+          const tbody = newTable.querySelector('tbody');
+          
+          allAppointments.forEach(function(app) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+              <td>${app.id}</td>
+              <td>${app.patient_name}</td>
+              <td>${app.doctor_name}</td>
+              <td>${app.speciality}</td>
+              <td>${app.date}</td>
+              <td>${app.time}</td>
+              <td><span class="badge ${getStatusClass(app.status)}">${getStatusText(app.status)}</span></td>
+              <td>${app.amount} ر.ي</td>
+            `;
+            tbody.appendChild(row);
+          });
+          
+          // استبدال الجدول الأصلي بالجدول الجديد
+          tableContainer.innerHTML = '';
+          tableContainer.appendChild(newTable);
+          
+          // إزالة عناصر الترقيم
+          const paginationElements = reportClone.querySelectorAll('.pagination, .dataTables_info, .dataTables_length, .dataTables_filter');
+          paginationElements.forEach(element => {
+            if (element && element.parentNode) {
+              element.parentNode.removeChild(element);
+            }
+          });
+        }
+      }
+      
+      // إضافة النسخة إلى DOM مؤقتًا للتصوير
+      reportClone.style.position = 'absolute';
+      reportClone.style.left = '-9999px';
+      document.body.appendChild(reportClone);
+      
+      // استخدام html2canvas لتحويل التقرير إلى صورة
+      html2canvas(reportClone, {
+        scale: 2, // للحصول على جودة أفضل
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      }).then(function(canvas) {
+        // إنشاء ملف PDF وإضافة الصورة إليه
+        const { jsPDF } = window.jspdf;
+        
+        // إنشاء ملف PDF بإعدادات خاصة لتجنب تكرار المحتوى
+        
+        // إعداد ملف PDF بحجم A4 أفقي لإنشاء إطار موحد
+        const pdf = new jsPDF({
+          orientation: 'landscape',
+          unit: 'mm',
+          format: 'a4',
+          compress: true
+        });
+        
+        // أبعاد الصفحة
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        
+        // تحويل المحتوى إلى صورة بجودة عالية
+        const contentImage = canvas.toDataURL('image/jpeg', 0.95);
+        
+        // حساب نسبة أبعاد المحتوى
+        const scaleFactor = 0.95; // معامل لترك هوامش
+        const imgWidth = pageWidth * scaleFactor;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        // حساب عدد الصفحات المطلوبة
+        const totalPages = Math.ceil(imgHeight / (pageHeight * scaleFactor));
+        
+        // للتأكد من عدم تجاوز الحد الأقصى للصفحات
+        const maxPages = 10; // أقصى عدد صفحات معقول
+        
+        // إذا كان عدد الصفحات أكثر من الحد المعقول، نقوم بتقسيم المحتوى بطريقة أفضل
+        if (totalPages > maxPages) {
+          // إضافة صفحة واحدة فقط بحجم مقلص
+          const compressedScale = 0.7; // تقليص المحتوى ليناسب الصفحة
+          const compressedWidth = pageWidth * compressedScale;
+          pdf.addImage(contentImage, 'JPEG', (pageWidth - compressedWidth) / 2, 5, compressedWidth, (canvas.height * compressedWidth) / canvas.width);
+        } else {
+          // إضافة الصورة إلى PDF على صفحة واحدة
+          const xOffset = (pageWidth - imgWidth) / 2; // توسيط الصورة أفقياً
+          pdf.addImage(contentImage, 'JPEG', xOffset, 5, imgWidth, imgHeight);
+        }
+        
+        // تصدير الملف
+        const today = new Date();
+        pdf.save(`تقرير_الحجوزات_${formatDate(today)}.pdf`);
+        
+        // إزالة النسخة المؤقتة من DOM
+        document.body.removeChild(reportClone);
+        
+        // إخفاء رسالة التحميل
+        $("#pdf-loading").remove();
+        console.log('تم تصدير ملف PDF بنجاح');
+        
+        // إعادة تعيين حالة التصدير
+        isExporting = false;
+      }).catch(function(error) {
+        console.error('خطأ أثناء تصدير PDF:', error);
+        $("#pdf-loading").remove();
+        alert('حدث خطأ أثناء إنشاء ملف PDF: ' + error.message);
+        
+        // إزالة النسخة المؤقتة في حالة الخطأ
+        if (document.body.contains(reportClone)) {
+          document.body.removeChild(reportClone);
+        }
+        
+        // إعادة تعيين حالة التصدير في حالة الخطأ
+        isExporting = false;
+      });
+      
+    } catch (error) {
+      console.error('خطأ في إنشاء ملف PDF:', error);
+      $("#pdf-loading").remove();
+      alert('حدث خطأ أثناء إنشاء ملف PDF: ' + error.message);
+      isExporting = false;
+    }
   }
 </script>
