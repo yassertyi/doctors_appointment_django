@@ -6,7 +6,7 @@ from hospitals.models import Hospital
 from django.contrib.auth import get_user_model
 from django.db.models import Min, Max, Avg
 from notifications.models import Notifications
-from patients.models import Favourites
+from patients.models import Favourites, Patients
 from payments.models import HospitalPaymentMethod, Payment, PaymentOption
 from reviews.models import Review
 from datetime import date
@@ -185,7 +185,8 @@ class BookingSerializer(serializers.ModelSerializer):
             "id", "doctor", "doctorimg", "doctor_name", "patient", "patient_name",
             "hospital", "hospital_name", "appointment_date", "appointment_time",
             "booking_date", "amount", "status", "created_at", "updated_at",
-            "payment_method", "transfer_number", "payment_verified", "payment_notes"
+            "payment_method",  "payment_verified", "payment_notes",            
+            "payment_receipt"
         ]
         read_only_fields = ["status", "created_at", "updated_at"]
 
@@ -276,7 +277,6 @@ class PaymentSerializer(serializers.ModelSerializer):
         ]
 
         extra_kwargs = {
-            'transfer_image': {'required': False, 'allow_null': True},
             'payment_date': {'read_only': True},
             'payment_status': {'read_only': True}
         }
@@ -284,7 +284,13 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 
 
-
+class PatientSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Patients
+        fields = '__all__'
+        extra_kwargs = {
+            'user': {'read_only': True},
+        }
 
 
 
@@ -398,53 +404,3 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
         
         return None
 
-
-
-# blog/api/serializers.py
-from rest_framework import serializers
-from blog.models import Post, Category, Tag, Comment
-from hospitals.models import Hospital
-
-
-class HospitalSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Hospital
-        fields = ['id', 'name', 'logo']
-
-
-
-class PostSerializer(serializers.ModelSerializer):
-    author = HospitalSerializer()
-    image = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Post
-        fields = ['id', 'title', 'slug', 'content', 'excerpt', 'image', 'author', 'views_count', 'created_at']
-
-    def get_image(self, obj):
-        if obj.image:
-            return self.context['request'].build_absolute_uri(obj.image.url)
-        return None
-
-
-
-class PostListSerializer(serializers.ModelSerializer):
-    author = serializers.StringRelatedField()
-    excerpt = serializers.SerializerMethodField() 
-    image = serializers.SerializerMethodField()
-    content = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Post
-        fields = ['id', 'title', 'slug', 'excerpt', 'content', 'image', 'author', 'views_count']
-
-    def get_excerpt(self, obj):
-        return obj.content[:150] + '...' if len(obj.content) > 150 else obj.content
-
-    def get_content(self, obj):
-        return obj.content 
-
-    def get_image(self, obj):
-        if obj.image:
-            return self.context['request'].build_absolute_uri(obj.image.url)
-        return None

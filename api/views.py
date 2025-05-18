@@ -7,7 +7,7 @@ from hospitals.models import Hospital
 from notifications.models import Notifications
 from payments.models import HospitalPaymentMethod, Payment
 from reviews.models import Review
-from .serializers import BookingSerializer, DoctorSerializer, FavouritesSerializer, HospitalPaymentMethodSerializer, HospitalSerializer, PaymentSerializer, RegisterSerializer, ReviewSerializer, SpecialtiesSerializer, UserSerializer
+from .serializers import BookingSerializer, ChangePasswordSerializer, DoctorSerializer, FavouritesSerializer, HospitalPaymentMethodSerializer, HospitalSerializer, PatientSerializer, PaymentSerializer, RegisterSerializer, ReviewSerializer, SpecialtiesSerializer, UserSerializer
 from django.contrib.auth import authenticate, get_user_model
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,7 +17,7 @@ from patients.models import Favourites, Patients
 from django.db.utils import IntegrityError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import JSONParser,MultiPartParser, FormParser
-from datetime import datetime
+from datetime import date, datetime
 from rest_framework.decorators import action
 from rest_framework.pagination import PageNumberPagination
 from .serializers import NotificationSerializer
@@ -128,7 +128,7 @@ class RegisterView(APIView):
             try:
                 user = serializer.save()
 
-                required_fields = ["birth_date", "gender", "weight", "height", "age", "blood_group"]
+                required_fields = ["birth_date", "gender"]
                 missing_fields = [field for field in required_fields if not request.data.get(field, None)]
 
                 if missing_fields:
@@ -152,10 +152,6 @@ class RegisterView(APIView):
                         user=user,
                         birth_date=birth_date,  
                         gender=request.data["gender"],
-                        weight=float(request.data["weight"]),
-                        height=float(request.data["height"]),
-                        age=int(request.data["age"]),
-                        blood_group=request.data["blood_group"],
                         notes=request.data.get("notes", "")
                     )
                 except ValueError as ve:
@@ -203,19 +199,15 @@ class LoginView(APIView):
                     'id': user.id,
                     'username': user.username,
                     'email': user.email,
-                    "mobile_number": 781270655,
+                    "mobile_number": user.mobile_number,
                     "birth_date":patient.birth_date,
                     "gender":patient.gender,
-                    "weight":patient.weight,
-                    "height":patient.height,
-                    "age":patient.age,
-                    "blood_group":patient.blood_group,
                     "first_name":user.first_name,
                     "last_name":user.last_name,
                     "address":user.address,
                     "city":user.city,
                     "state":user.state,
-                    'join_date':patient.created_at
+                    
                 },
                 'tokens': tokens
                 }
@@ -420,6 +412,41 @@ class UserProfileView(APIView):
                 },
                 
             }, status=status.HTTP_200_OK)
+    
+    
+    def put(self, request):
+        try:
+            user = request.user
+            patient = get_object_or_404(Patients, user=user)
+            data = request.data
+
+            user_fields = ['username', 'email', 'first_name', 'last_name', 'address', 'city', 'state']
+            for field in user_fields:
+                if field in data:
+                    setattr(user, field, data[field])
+            
+            user.save()
+
+            patient_fields = ['mobile_number', 'birth_date', 'gender', 'weight', 
+                             'height', 'blood_group']
+            for field in patient_fields:
+                if field in data:
+                    setattr(patient, field, data[field])
+            
+            if 'birth_date' in data:
+                birth_date = datetime.strptime(data['birth_date'], '%Y-%m-%d').date()
+                patient.age = calculate_age(birth_date)
+            
+            patient.save()
+
+            return Response({'detail': 'Profile updated successfully'}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+def calculate_age(birth_date):
+    today = date.today()
+    return today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
 
 
@@ -492,7 +519,7 @@ class PaymentViewSet(viewsets.ModelViewSet):
             payment_method=payment_method,
             payment_subtotal=data['payment_subtotal'],
             payment_discount=data.get('payment_discount', 0),
-            payment_currency=data['payment_currency'],
+            payment_currency="RYL",
             payment_type=data['payment_type'],
             payment_note=data.get('payment_note', ''),
             payment_status=0  
@@ -500,6 +527,17 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(payment)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"detail": "Password updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 
