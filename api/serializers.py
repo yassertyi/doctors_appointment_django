@@ -154,6 +154,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
         if profile_picture:
             user.profile_picture = profile_picture
+            user.user_type = 'patient'
             user.save()
 
         return user
@@ -327,7 +328,6 @@ class PatientSerializer(serializers.ModelSerializer):
   "transfer_number": null,
     "payment_notes": null
 }
-
 {
   "id": 5,
   "doctor": 1,
@@ -351,7 +351,6 @@ class PatientSerializer(serializers.ModelSerializer):
   "payment_verified_by": null,
   "payment_notes": null
 }
-
 """
 
 
@@ -404,3 +403,78 @@ class HospitalDetailSerializer(serializers.ModelSerializer):
         
         return None
 
+
+
+# blog/api/serializers.py
+from rest_framework import serializers
+from blog.models import Post, Category, Tag, Comment
+from hospitals.models import Hospital
+
+
+class HospitalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hospital
+        fields = ['id', 'name', 'logo']
+
+
+
+class PostSerializer(serializers.ModelSerializer):
+    author = HospitalSerializer()
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ['id', 'title', 'slug', 'content', 'excerpt', 'image', 'author', 'views_count', 'created_at']
+
+    def get_image(self, obj):
+        if obj.image:
+            return self.context['request'].build_absolute_uri(obj.image.url)
+        return None
+
+
+
+class PostListSerializer(serializers.ModelSerializer):
+    author = serializers.StringRelatedField()
+    excerpt = serializers.SerializerMethodField() 
+    image = serializers.SerializerMethodField()
+    content = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ['id', 'title', 'slug', 'excerpt', 'content', 'image', 'author', 'views_count']
+
+    def get_excerpt(self, obj):
+        return obj.content[:150] + '...' if len(obj.content) > 150 else obj.content
+
+    def get_content(self, obj):
+        return obj.content 
+
+    def get_image(self, obj):
+        if obj.image:
+            return self.context['request'].build_absolute_uri(obj.image.url)
+        return None
+
+
+
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Old password is incorrect.")
+        return value
+
+    def validate_new_password(self, value):
+        if len(value) < 8:
+            raise serializers.ValidationError("Password must be at least 8 characters long.")
+        return value
+
+    def save(self, **kwargs):
+        user = self.context['request'].user
+        new_password = self.validated_data['new_password']
+        user.set_password(new_password)
+        user.save()

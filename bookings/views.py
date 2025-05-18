@@ -9,6 +9,7 @@ from notifications.models import Notifications
 import json
 from hospital_staff.permissions import has_permission
 
+
 # عرض حجز الطبيب
 # Create your views here.
 
@@ -207,7 +208,7 @@ def cancel_booking(request, booking_id):
 
 # عرض صفحة نجاح الحجز
 @login_required(login_url='/user/login')
-@has_permission('manage_bookings')
+
 def booking_success(request, booking_id):
     """عرض صفحة نجاح الحجز"""
     booking = get_object_or_404(Booking, id=booking_id, patient__user=request.user)
