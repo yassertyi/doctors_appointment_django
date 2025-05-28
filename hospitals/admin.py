@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from django.contrib.auth import get_user_model
+
+from hospitals.notification import Notification
 from .models import Hospital, HospitalAccountRequest, City, PhoneNumber, HospitalUpdateRequest
 
 User = get_user_model()
@@ -85,16 +87,12 @@ class HospitalAccountRequestAdmin(admin.ModelAdmin):
             hospital_request.reviewed_at = timezone.now()
             hospital_request.save()
 
-            # إرسال بريد إلكتروني بمعلومات تسجيل الدخول
-            subject = 'تمت الموافقة على طلب تسجيل المستشفى'
-            message = f'''مرحباً {hospital_request.manager_full_name}،
-            تمت الموافقة على طلب تسجيل المستشفى الخاص بكم. يمكنكم الآن تسجيل الدخول باستخدام المعلومات التالية:
-            اسم المستخدم: {user.username}
-            كلمة المرور: {hospital_request.manager_password}
-            يرجى تغيير كلمة المرور بعد تسجيل الدخول لأول مرة.
-            '''
+           
             try:
-                user.email_user(subject, message)
+                print(f"محاولة إرسال بريد إلكتروني إلى {user.email}")
+                email_sent = Notification.send_hospital_manager_credentials(user,hospital_request.hospital_name)
+                if not email_sent:
+                    print(f"فشل في إرسال البريد الإلكتروني إلى {user.email}")
             except Exception as e:
                 self.message_user(request, f"تم إنشاء الحساب ولكن فشل إرسال البريد الإلكتروني: {str(e)}")
 

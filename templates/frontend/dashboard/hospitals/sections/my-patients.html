@@ -1,4 +1,5 @@
 {% load static %}
+{% load custom_filters %}
 
 <div class="col-md-7 col-lg-8 col-xl-9 my_patient section">
     <!-- Header Section -->
@@ -6,23 +7,8 @@
         <div class="col-12">
             <div class="d-flex flex-wrap justify-content-between align-items-center">
                 <h2 class="mb-3 mb-md-0">المرضى</h2>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse"
-                        data-bs-target="#filterSection">
-                        <i class="fas fa-filter me-2"></i>فلترة
-                    </button>
-                    <div class="dropdown">
-                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                            data-bs-toggle="dropdown">
-                            <i class="fas fa-sort me-2"></i>ترتيب حسب
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" data-sort="full_name">الاسم</a></li>
-                            <li><a class="dropdown-item" href="#" data-sort="id">رقم المريض</a></li>
-                            <li><a class="dropdown-item" href="#" data-sort="age">العمر</a></li>
-                        </ul>
-                    </div>
-                </div>
+                
+              
             </div>
         </div>
     </div>
@@ -81,24 +67,36 @@
     <!-- جدول المرضى -->
     <div class="card shadow-sm mb-4">
         <div class="card-body">
+            <div class="d-flex justify-content-between mb-3">
+                <div>
+                    <h5 class="card-title">قائمة المرضى</h5>
+                    <p id="resultsInfo" class="text-muted small mb-0">عرض 7 من {{ patients|length }} نتيجة</p>
+                </div>
+                <button id="printPatientsTable" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-print me-1"></i> طباعة الجدول
+                </button>
+            </div>
             <div class="table-responsive">
                 <table class="table table-hover table-striped" id="patientTable">
                     <thead class="table-light">
                         <tr>
+                            <th>#</th>
                             <th>رقم المريض</th>
-                            <th>الصورة</th>
+                            <th></th>
                             <th>الاسم</th>
                             <th>البريد الإلكتروني</th>
                             <th>الجنس</th>
-                            <th>عدد الحجوزات</th>
-                            <th>آخر حجز</th>
-                            <th>الإجراءات</th>
+                            <th>الحجوزات المؤكدة</th>
+                            <th>قيد الانتظار</th>
+                            <th>الملغاة</th>
+                           
                         </tr>
                     </thead>
                     <tbody>
                         {% for patient in patients %}
                         <tr class="patient-row" data-name="{{ patient.user.get_full_name }}" data-id="{{ patient.id }}"
-                            data-gender="{{ patient.gender }}" data-age="{{ patient.age|default:0 }}">
+                            data-gender="{{ patient.gender }}" data-age="{{ patient.age|default:0 }}" data-bookings="{{ patient.booking_count }}">
+                            <td>{{ forloop.counter }}</td>
                             <td>{{ patient.id }}</td>
                             <td>
                                 <img src="{{ patient.user.profile_picture.url|default:'https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?w=500&h=500&fit=crop' }}"
@@ -115,36 +113,45 @@
                                     {% endif %}
                                 </span>
                             </td>
-                            <td>
-                                <div class="d-flex flex-column align-items-center">
-                                    <strong class="small text-muted mb-1">إجمالي الحجوزات</strong>
-                                    <span class="badge rounded-pill bg-success fs-6 px-3">{{ patient.booking_count }}</span>
-                                </div>
+                            <td class="text-center">
+                                <!-- عدد الحجوزات المؤكدة -->
+                                <span class="small">{{ patient|count_bookings }}</span>
                             </td>
-                            <td>
-                                {% if patient.last_booking %}
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-clock text-warning me-2"></i>
-                                    <span>{{ patient.last_booking.booking_date }}</span>
-                                </div>
-                                {% else %}
-                                <span class="text-muted">لا يوجد حجوزات سابقة</span>
-                                {% endif %}
+                            <td class="text-center">
+                                <!-- عدد الحجوزات قيد الانتظار -->
+                                <span class="small">{{ patient|count_pending_bookings }}</span>
                             </td>
-                            <td>
-                                <div class="btn-group">
-                                    <a href="#" class="btn btn-sm btn-outline-primary" title="عرض التفاصيل">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="#" class="btn btn-sm btn-outline-success" title="حجز جديد">
-                                        <i class="fas fa-calendar-plus"></i>
-                                    </a>
-                                </div>
+                            <td class="text-center">
+                                <!-- عدد الحجوزات الملغاة -->
+                                <span class="small">{{ patient|count_cancelled_bookings }}</span>
                             </td>
+                        
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+            
+            <!-- ترقيم الصفحات -->
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div class="text-muted small">
+                    <span id="paginationInfo"></span>
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm" id="pagination">
+                        <li class="page-item disabled" id="prevPage">
+                            <a class="page-link" href="#" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <!-- سيتم إضافة أرقام الصفحات هنا بواسطة JavaScript -->
+                        <li class="page-item disabled" id="nextPage">
+                            <a class="page-link" href="#" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
             </div>
         </div>
     </div>
@@ -163,6 +170,28 @@
 <style>
     .table th {
         font-weight: 600;
+    }
+    
+    /* أنماط للطباعة */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        #patientTable, #patientTable * {
+            visibility: visible;
+        }
+        
+        #patientTable {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
     }
     
     .table-hover tbody tr:hover {
@@ -211,70 +240,207 @@
         const patientRows = document.querySelectorAll('.patient-row');
         const noResults = document.getElementById('noResults');
         const patientTable = document.getElementById('patientTable');
+        const printButton = document.getElementById('printPatientsTable');
+        const pagination = document.getElementById('pagination');
+        const paginationInfo = document.getElementById('paginationInfo');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        
+        // وظيفة طباعة الجدول
+        if (printButton) {
+            printButton.addEventListener('click', function() {
+                window.print();
+            });
+        }
 
+        // تم إزالة السكريبت الإضافي لأن القيمة تأتي من الخادم
+
+        // متغيرات لترقيم الصفحات
+        const maxVisibleResults = 7;
+        let currentPage = 1;
+        let totalPages = 1;
+        let filteredRows = [];
+        
+        // تحديث أرقام الصفوف المرئية فقط
+        function updateRowNumbers() {
+            let counter = (currentPage - 1) * maxVisibleResults + 1;
+            patientRows.forEach(row => {
+                if (!row.classList.contains('filtered') && !row.classList.contains('d-none')) {
+                    row.querySelector('td:first-child').textContent = counter++;
+                }
+            });
+        }
+        
+        // إنشاء أزرار الترقيم
+        function createPagination(totalItems) {
+            // حساب عدد الصفحات
+            totalPages = Math.ceil(totalItems / maxVisibleResults);
+            
+            // إزالة أزرار الصفحات السابقة
+            const pageButtons = document.querySelectorAll('.page-number');
+            pageButtons.forEach(btn => btn.remove());
+            
+            // إنشاء أزرار الصفحات
+            const nextPageElement = document.getElementById('nextPage');
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = `page-item page-number ${i === currentPage ? 'active' : ''}`;
+                li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
+                li.addEventListener('click', function() {
+                    goToPage(i);
+                });
+                
+                pagination.insertBefore(li, nextPageElement);
+            }
+            
+            // تحديث حالة أزرار السابق والتالي
+            prevPageBtn.classList.toggle('disabled', currentPage === 1);
+            nextPageBtn.classList.toggle('disabled', currentPage === totalPages || totalPages === 0);
+            
+            // تحديث معلومات الترقيم
+            if (paginationInfo) {
+                if (totalItems > 0) {
+                    const start = (currentPage - 1) * maxVisibleResults + 1;
+                    const end = Math.min(currentPage * maxVisibleResults, totalItems);
+                    paginationInfo.textContent = `عرض ${start} - ${end} من ${totalItems} نتيجة`;
+                } else {
+                    paginationInfo.textContent = 'لا توجد نتائج';
+                }
+            }
+        }
+        
+        // الانتقال إلى صفحة محددة
+        function goToPage(page) {
+            currentPage = page;
+            
+            // إخفاء جميع الصفوف
+            filteredRows.forEach(row => row.classList.add('d-none'));
+            
+            // عرض الصفوف الخاصة بالصفحة الحالية
+            const startIndex = (currentPage - 1) * maxVisibleResults;
+            const endIndex = Math.min(startIndex + maxVisibleResults, filteredRows.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                filteredRows[i].classList.remove('d-none');
+            }
+            
+            // تحديث الترقيم
+            createPagination(filteredRows.length);
+            updateRowNumbers();
+        }
+        
         function filterPatients() {
             const searchTerm = patientSearch.value.toLowerCase();
             const gender = genderFilter.value;
             const ageRange = ageFilter.value;
             const location = locationFilter.value.toLowerCase();
 
-            let visibleCount = 0;
+            // إعادة تعيين مصفوفة الصفوف المفلترة
+            filteredRows = [];
 
+            // تطبيق الفلترة على جميع الصفوف
             patientRows.forEach(row => {
                 const name = row.dataset.name.toLowerCase();
                 const id = row.dataset.id.toLowerCase();
                 const rowGender = row.dataset.gender;
                 const rowAge = parseInt(row.dataset.age);
-                // Podemos obtener la ubicación de las celdas si es necesario
-                // const rowLocation = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
+                // يمكننا الحصول على الموقع من الخلايا إذا لزم الأمر
+                const email = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
 
                 let isVisible = true;
 
-                // Filtro de búsqueda (nombre, ID o correo electrónico)
-                if (searchTerm && !name.includes(searchTerm) && !id.includes(searchTerm) && 
-                    !row.querySelector('td:nth-child(4)').textContent.toLowerCase().includes(searchTerm)) {
+                // فلتر البحث (الاسم، الرقم التعريفي، البريد الإلكتروني)
+                if (searchTerm && !name.includes(searchTerm) && !id.includes(searchTerm) && !email.includes(searchTerm)) {
                     isVisible = false;
                 }
 
-                // Filtro de género
+                // فلتر الجنس
                 if (gender && rowGender !== gender) {
                     isVisible = false;
                 }
 
-                // Filtro de rango de edad
+                // فلتر الفئة العمرية
                 if (ageRange) {
                     const [min, max] = ageRange.split('-').map(num => num.replace('+', ''));
-                    if ((min && rowAge < parseInt(min)) || (max && rowAge > parseInt(max))) {
+                    if ((min && rowAge < parseInt(min)) || (max && max !== '' && rowAge > parseInt(max))) {
                         isVisible = false;
                     }
                 }
 
-                // Location filter - commented out as we may not have location data now
-                // if (location && !rowLocation.includes(location)) {
-                //     isVisible = false;
-                // }
+                // فلتر الموقع - معلق حالياً لأننا قد لا نملك بيانات الموقع
+                if (location && location.trim() !== '') {
+                    // يمكن تفعيل هذا إذا كان لدينا بيانات موقع
+                    isVisible = false;
+                }
 
-                // Aplicar filtro
-                if (isVisible) {
-                    row.classList.remove('filtered');
-                    visibleCount++;
-                } else {
+                // تطبيق الفلتر
+                row.classList.remove('filtered');
+                row.classList.add('d-none'); // إخفاء جميع الصفوف أولاً
+                
+                if (!isVisible) {
                     row.classList.add('filtered');
+                } else {
+                    // إضافة الصف إلى قائمة الصفوف المفلترة
+                    filteredRows.push(row);
                 }
             });
 
-            // Show no results message if no visible patients
-            if (visibleCount === 0) {
+            // إظهار رسالة عدم وجود نتائج إذا لم تكن هناك نتائج مرئية
+            if (filteredRows.length === 0) {
                 noResults.classList.remove('d-none');
             } else {
                 noResults.classList.add('d-none');
+                
+                // الانتقال إلى الصفحة الأولى بعد الفلترة
+                currentPage = 1;
+                goToPage(1);
+                
+                // إضافة معلومات عن عدد النتائج
+                const resultsInfo = document.getElementById('resultsInfo');
+                if (resultsInfo) {
+                    if (totalVisible > maxVisibleResults) {
+                        resultsInfo.textContent = `عرض ${maxVisibleResults} من ${totalVisible} نتيجة`;
+                        resultsInfo.classList.remove('d-none');
+                    } else {
+                        resultsInfo.textContent = `عرض ${totalVisible} نتيجة`;
+                        resultsInfo.classList.remove('d-none');
+                    }
+                }
             }
+            
+            // تحديث أرقام الصفوف
+            updateRowNumbers();
         }
 
         patientSearch.addEventListener('input', filterPatients);
         genderFilter.addEventListener('change', filterPatients);
         ageFilter.addEventListener('change', filterPatients);
         locationFilter.addEventListener('input', filterPatients);
+        
+        // إضافة مستمعي أحداث لأزرار السابق والتالي
+        prevPageBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage > 1) {
+                goToPage(currentPage - 1);
+            }
+        });
+        
+        nextPageBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            if (currentPage < totalPages) {
+                goToPage(currentPage + 1);
+            }
+        });
+        
+        // تهيئة الصفحة الأولى عند التحميل
+        // إضافة جميع الصفوف إلى قائمة الصفوف المفلترة
+        patientRows.forEach(row => {
+            filteredRows.push(row);
+        });
+        
+        // عرض الصفحة الأولى
+        goToPage(1);
     });
 </script>
 {% endblock %}

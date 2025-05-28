@@ -147,8 +147,7 @@ class RegisterView(APIView):
                     )
 
                 try:
-                    user.user_type = 'patient'
-                    patient = Patients.objects.create(
+                    Patients.objects.create(
                         user=user,
                         birth_date=birth_date,  
                         gender=request.data["gender"],
@@ -156,7 +155,7 @@ class RegisterView(APIView):
                     )
                 except ValueError as ve:
                     return Response(
-                        {"error": "Invalid data type for weight, height, or age."},
+                        {"error": "Invalid data ."},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
@@ -396,19 +395,14 @@ class UserProfileView(APIView):
                     'id': request.user.id,
                     'username': request.user.username,
                     'email': request.user.email,
-                    "mobile_number": 781270655,
+                    "mobile_number": patient.user.mobile_number,
                     "birth_date":patient.birth_date,
                     "gender":patient.gender,
-                    "weight":patient.weight,
-                    "height":patient.height,
-                    "age":patient.age,
-                    "blood_group":patient.blood_group,
                     "first_name":request.user.first_name,
                     "last_name":request.user.last_name,
                     "address":request.user.address,
                     "city":request.user.city,
                     "state":request.user.state,
-                    'join_date':patient.created_at
                 },
                 
             }, status=status.HTTP_200_OK)
@@ -427,8 +421,7 @@ class UserProfileView(APIView):
             
             user.save()
 
-            patient_fields = ['mobile_number', 'birth_date', 'gender', 'weight', 
-                             'height', 'blood_group']
+            patient_fields = ['mobile_number', 'birth_date', 'gender']
             for field in patient_fields:
                 if field in data:
                     setattr(patient, field, data[field])

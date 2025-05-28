@@ -716,6 +716,7 @@ def hospital_request_success(request):
     # print(f"\n\n*** المستخدم مسجل الدخول: {request.user.is_authenticated} ***\n\n")
     return render(request, 'frontend/auth/hospital-request-success.html')
 
+
 def hospital_request_status(request, request_id):
     """عرض حالة الطلب"""
     hospital_request = get_object_or_404(HospitalAccountRequest, id=request_id)
@@ -2881,6 +2882,9 @@ def hospital_patients(request):
     عرض المرضى الذين قاموا بالحجز في المستشفى
     """
     try:
+        # رسالة تأكيد لتحديث الصفحة
+        messages.success(request, "تم تحديث صفحة المرضى بنجاح")
+        
         # Get hospital based on user type
         hospital = None
         if request.user.user_type == 'hospital_manager':
@@ -2892,14 +2896,39 @@ def hospital_patients(request):
         else:
             messages.error(request, "ليس لديك صلاحية الوصول إلى هذه الصفحة.")
             return redirect('users:logout')
-            
-        # Get patients who have made bookings at this hospital with their details
-        patients = Patients.objects.filter(bookings__hospital=hospital).distinct().select_related('user')
         
-        # Get booking counts for each patient
+        # الحصول على قائمة المرضى الذين لديهم حجوزات في هذه المستشفى
+        from django.db.models import Count
+        
+        # الحصول على قائمة المرضى مع عدد الحجوزات
+        # استخدام تقنية تجميع البيانات في استعلام واحد
+        patient_ids = Booking.objects.filter(hospital=hospital).values_list('patient_id', flat=True).distinct()
+        
+        # طباعة عدد المرضى للتصحيح
+        print(f"[DEBUG] Found {len(patient_ids)} patients with bookings")
+        
+        # الحصول على المرضى
+        patients = Patients.objects.filter(id__in=patient_ids).select_related('user')
+        
+        # إنشاء قاموس لتخزين عدد الحجوزات لكل مريض
+        booking_counts = {}
+        
+        # حساب عدد الحجوزات لكل مريض بشكل منفصل
+        for patient_id in patient_ids:
+            count = Booking.objects.filter(patient_id=patient_id, hospital=hospital).count()
+            booking_counts[patient_id] = count
+            print(f"[DEBUG] Patient ID {patient_id} has {count} bookings")
+        
+        # إضافة عدد الحجوزات وآخر حجز لكل مريض
         for patient in patients:
-            patient.booking_count = Booking.objects.filter(patient=patient, hospital=hospital).count()
-            patient.last_booking = Booking.objects.filter(patient=patient, hospital=hospital).order_by('-created_at').first()
+            # تعيين عدد الحجوزات الفعلي من القاموس
+            patient.booking_count = booking_counts.get(patient.id, 0)
+            
+            # الحصول على آخر حجز
+            patient.last_booking = Booking.objects.filter(
+                patient=patient, 
+                hospital=hospital
+            ).order_by('-created_at').first()
         
         context = {
             'patients': patients,

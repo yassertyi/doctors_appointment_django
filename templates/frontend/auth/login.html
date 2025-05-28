@@ -16,7 +16,7 @@
                             </div>
                             <div class="col-md-12 col-lg-6 login-right">
                                 <div class="login-header">
-                                    <h3>Login <span>Doccure</span></h3>
+                                    <h3>تسجيل الدخول <span></span></h3>
                                 </div>
 
                                 {% if request.GET.message == 'login_required' %}
@@ -34,16 +34,16 @@
 
                                     <div class="mb-3 form-focus">
                                         <input type="email" name="email" class="form-control floating" required>
-                                        <label class="focus-label">Email</label>
+                                        <label class="focus-label">البريد الالكتروني</label>
                                     </div>
                                     <div class="mb-3 form-focus">
                                         <input type="password" name="password" class="form-control floating" required>
-                                        <label class="focus-label">Password</label>
+                                        <label class="focus-label">كلمة المرور</label>
                                     </div>
                                     <div class="text-end">
-                                        <a class="forgot-link" href="">Forgot Password ?</a>
+                                        <a class="forgot-link" href=""></a>
                                     </div>
-                                    <button class="btn btn-primary w-100 btn-lg login-btn" type="submit">Login</button>
+                                    <button class="btn btn-primary w-100 btn-lg login-btn" type="submit">تسجيل الدخول</button>
                                     <div class="login-or">
                                         <span class="or-line"></span>
                                         <span class="span-or">or</span>
@@ -53,7 +53,7 @@
                                             <a href="{% url 'social:begin' 'google-oauth2' %}{% if request.GET.next %}?next={{ request.GET.next }}{% endif %}" class="btn btn-google w-100"><i class="fab fa-google me-1"></i> تسجيل الدخول بحساب جوجل</a>
                                         </div>
                                     </div>
-                                    <div class="text-center dont-have">Don’t have an account? <a href="{% url 'users:signup' %}">Register</a></div>
+                                    <div class="text-center dont-have">ليس لديك حساب ? <a href="{% url 'users:signup' %}">سجل</a></div>
                                 </form>
                             </div>
                         </div>

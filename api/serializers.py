@@ -328,6 +328,7 @@ class PatientSerializer(serializers.ModelSerializer):
   "transfer_number": null,
     "payment_notes": null
 }
+
 {
   "id": 5,
   "doctor": 1,
@@ -351,6 +352,7 @@ class PatientSerializer(serializers.ModelSerializer):
   "payment_verified_by": null,
   "payment_notes": null
 }
+
 """
 
 
