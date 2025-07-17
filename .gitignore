@@ -31,9 +31,7 @@ db.sqlite3-journal
 /media/
 **/media/
 **/static/
-doctors_appointment/static/
-/static/
-/staticfiles/
+
 
 # IDE - VSCode
 .vscode/*
